@@ -1,0 +1,101 @@
+/* Reset CSS */
+* {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+}
+
+body {
+    font-family: 'Arial', sans-serif;
+    line-height: 1.6;
+    color: #333;
+    background-color: #f4f4f4;
+}
+
+.container {
+    width: 80%;
+    margin: auto;
+    overflow: hidden;
+}
+
+/* Header */
+header {
+    background: #333;
+    background: url(img/daihoctaydo-tdu.jpg);
+    color: #fff;
+    padding: 20px 0;
+    text-align: center;
+}
+
+header h1 {
+    margin: 0;
+}
+
+/* Hero Section */
+.hero {
+    background: #e0e0e0;
+    padding: 40px 0;
+    text-align: center;
+}
+
+.hero h2 {
+    margin-bottom: 20px;
+    color: #7d46b4;
+}
+
+.hero p {
+    font-size: 1.2em;
+    color: #666;
+    max-width: 600px;
+    margin: auto;
+}
+
+/* Mission Section */
+.mission {
+    background: #fff;
+    padding: 40px 0;
+    text-align: center;
+}
+
+.mission h2 {
+    margin-bottom: 20px;
+    color: #7d46b4;
+}
+
+.mission p {
+    font-size: 1.2em;
+    color: #666;
+    max-width: 600px;
+    margin: auto;
+}
+
+/* Story Section */
+.story {
+    background: #e0e0e0;
+    padding: 40px 0;
+    text-align: center;
+}
+
+.story h2 {
+    margin-bottom: 20px;
+    color: #7d46b4;
+}
+
+.story p {
+    font-size: 1.2em;
+    color: #666;
+    max-width: 800px;
+    margin: auto;
+}
+
+/* Footer */
+footer {
+    background: #333;
+    color: #fff;
+    text-align: center;
+    padding: 10px 0;
+}
+
+footer p {
+    margin: 0;
+}
