@@ -10,28 +10,33 @@ $result = $conn->query($query);
 
 // Xử lý tải lên hình ảnh khuôn mặt
 if (isset($_POST['upload']) && isset($_FILES['face_image'])) {
-    $ma_sv = $_POST['ma_sv'];
+    $ma_sv = intval($_POST['ma_sv']); // Chuyển về int (phòng lỗi)
     $imageData = file_get_contents($_FILES["face_image"]["tmp_name"]);
 
-    // Kiểm tra nếu file ảnh hợp lệ
     if (!$imageData) {
         $message = "Lỗi: Không thể đọc file ảnh!";
     } else {
         $update_query = "UPDATE sinhvien SET nhan_dien = ? WHERE ma_sv = ?";
         $stmt = $conn->prepare($update_query);
-        $stmt->bind_param("sb", $ma_sv, $imageData); // "b" để xử lý BLOB
 
-        // Gửi dữ liệu ảnh BLOB
-        $stmt->send_long_data(1, $imageData);
+        if ($stmt) {
+            // Bind chỉ số của dữ liệu blob
+            $stmt->bind_param("bi", $null, $ma_sv); // "b" cho BLOB, "i" cho int
+            $stmt->send_long_data(0, $imageData); // Gửi dữ liệu ảnh
 
-        if ($stmt->execute()) {
-            $message = "Đã lưu khuôn mặt thành công!";
+            if ($stmt->execute()) {
+                $message = "Đã lưu khuôn mặt thành công!";
+            } else {
+                $message = "Lỗi khi lưu ảnh vào database: " . $stmt->error;
+            }
+
+            $stmt->close();
         } else {
-            $message = "Lỗi khi lưu ảnh vào database.";
+            $message = "Lỗi truy vấn SQL: " . $conn->error;
         }
-        $stmt->close();
     }
 }
+
 
 
 ?>
@@ -140,6 +145,7 @@ if (isset($_POST['upload']) && isset($_FILES['face_image'])) {
                             MSSV: <?php echo $row['ma_sv']; ?>
                         </div>
                         <div class="face-preview">
+
                             <img src="get_image.php?ma_sv=<?php echo $row['ma_sv']; ?>" alt="Khuôn mặt">
 
                         </div>

@@ -90,7 +90,9 @@ $conn->close();
             </div>
             <div class="button-container">
                 <a href="khuonmat.php" class="vertical-button">Khuôn mặt</a>
+                <a href="javascript:void(0);" class="vertical-button" onclick="nhanDien()">Nhận Diện</a>
                 <button type="button" class="vertical-button" onclick="xacNhanDiemDanh()">Xác nhận</button>
+
             </div>
 
         </div>
@@ -146,9 +148,20 @@ $conn->close();
         </div>
     </div>
     <script>
+        let danhSachDiemDanh = {};
+
         function diemDanh(ma_sv, trang_thai) {
             let trangThaiValue = (trang_thai === 'Có mặt') ? 1 : 0;
 
+            // Cập nhật giao diện ngay lập tức
+            let statusElement = document.getElementById('status_' + ma_sv);
+            statusElement.textContent = trang_thai;
+            statusElement.style.color = (trang_thai === 'Có mặt') ? 'green' : 'red';
+
+            // Lưu trạng thái vào object danhSachDiemDanh
+            danhSachDiemDanh[ma_sv] = trangThaiValue;
+
+            // Gửi dữ liệu lên server để lưu vào CSDL
             fetch('diemdanh_submit.php', {
                 method: 'POST',
                 headers: {
@@ -158,31 +171,13 @@ $conn->close();
             })
                 .then(response => response.json())
                 .then(data => {
-                    if (data.success) {
-                        let statusElement = document.getElementById('status_' + ma_sv);
-                        statusElement.textContent = trang_thai;
-
-                        // Xóa class cũ và thêm class mới
-                        statusElement.classList.remove('present', 'absent');
-                        statusElement.classList.add(trangThaiValue === 1 ? 'present' : 'absent');
-                    } else {
+                    if (!data.success) {
                         alert("Lỗi điểm danh: " + data.message);
                     }
                 })
                 .catch(error => console.error('Lỗi:', error));
         }
 
-
-
-
-
-        let danhSachDiemDanh = {};
-
-        function diemDanh(ma_sv, trang_thai) {
-            danhSachDiemDanh[ma_sv] = trang_thai === 'Có mặt' ? 1 : 0; // 1 = Có mặt, 0 = Vắng mặt
-            document.getElementById('status_' + ma_sv).textContent = trang_thai;
-            document.getElementById('status_' + ma_sv).style.color = (trang_thai === 'Có mặt') ? 'green' : 'red';
-        }
 
 
         const ma_lop = <?= json_encode($ma_lop) ?>;
@@ -214,6 +209,16 @@ $conn->close();
                 })
                 .catch(error => console.error('Lỗi:', error));
 
+        }
+
+
+        function nhanDien() {
+            const ma_lop = <?= json_encode($ma_lop) ?>;
+            const ma_monhoc = <?= json_encode($ma_monhoc) ?>;
+            const ngay = <?= json_encode($ngay) ?>;
+
+            // Điều hướng sang trang nhan_dien.php
+            window.location.href = `nhan_dien.php?ma_lop=${ma_lop}&ma_monhoc=${ma_monhoc}&ngay=${ngay}`;
         }
 
 

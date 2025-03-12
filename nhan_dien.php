@@ -27,14 +27,13 @@ $lop_info = $result_lop->fetch_assoc();
 $stmt_lop->close();
 
 ?>
-
 <!DOCTYPE html>
 <html lang="vi">
 
 <head>
     <title>Điểm Danh Bằng Khuôn Mặt</title>
     <link rel="stylesheet" href="style.css">
-    <script src="https://cdn.jsdelivr.net/npm/face-api.js"></script>
+    <script defer src="js/face-api.min.js" onload="loadModels()"></script>
     <style>
         .camera-container {
             position: relative;
@@ -133,30 +132,34 @@ $stmt_lop->close();
         const ma_lop = <?= json_encode($ma_lop) ?>;
         const ma_monhoc = <?= json_encode($ma_monhoc) ?>;
         const ngay = <?= json_encode($ngay) ?>;
+        const modelUrl = 'https://cdn.jsdelivr.net/gh/justadudewhohacks/face-api.js@master/weights';
+
 
         // Tải mô hình face-api
         async function loadModels() {
             await Promise.all([
-                faceapi.nets.ssdMobilenetv1.loadFromUri('face-models'),
-                faceapi.nets.faceLandmark68Net.loadFromUri('face-models'),
-                faceapi.nets.faceRecognitionNet.loadFromUri('face-models')
+                faceapi.nets.ssdMobilenetv1.loadFromUri(modelUrl),
+                faceapi.nets.faceLandmark68Net.loadFromUri(modelUrl),
+                faceapi.nets.faceRecognitionNet.loadFromUri(modelUrl),
             ]);
+            console.log("Tất cả mô hình đã được tải!");
+
             startBtn.disabled = false;
+
         }
 
         // Tải dữ liệu khuôn mặt sinh viên
         async function loadStudentFaces() {
-            // Lấy dữ liệu sinh viên
             const response = await fetch(`get_student_faces.php?ma_lop=${ma_lop}`);
             const students = await response.json();
 
-            // Tạo bộ mô tả có nhãn cho mỗi sinh viên
             labeledDescriptors = [];
 
             for (const student of students) {
                 if (student.co_khuon_mat) {
                     try {
-                        const img = await faceapi.fetchImage(`faces/${student.ma_sv}.jpg`);
+                        const img = await faceapi.fetchImage(`http://localhost:3000/get_image.php?ma_sv=${student.ma_sv}`);
+
                         const detection = await faceapi.detectSingleFace(img)
                             .withFaceLandmarks()
                             .withFaceDescriptor();
@@ -178,6 +181,7 @@ $stmt_lop->close();
             return new faceapi.FaceMatcher(labeledDescriptors, 0.6);
         }
 
+
         // Khởi động camera
         async function startCamera() {
             try {
@@ -196,6 +200,9 @@ $stmt_lop->close();
         }
 
         // Bắt đầu nhận diện khuôn mặt
+        let lastRecognized = {}; // Lưu trạng thái sinh viên được nhận diện
+        const recognitionCooldown = 2000; // Giữ tên trên màn hình trong 2 giây
+
         async function startFaceRecognition() {
             if (!stream) {
                 alert('Camera chưa được khởi động!');
@@ -205,64 +212,66 @@ $stmt_lop->close();
             startBtn.disabled = true;
             startBtn.textContent = 'Đang nhận diện...';
             completeBtn.disabled = false;
-
             isRecognizing = true;
 
-            // Tải bộ so khớp khuôn mặt
             const faceMatcher = await loadStudentFaces();
 
-            // Vòng lặp nhận diện
             const recognitionInterval = setInterval(async () => {
                 if (!isRecognizing) {
                     clearInterval(recognitionInterval);
                     return;
                 }
 
-                // Phát hiện khuôn mặt
-                const detections = await faceapi.detectAllFaces(video)
+                const detections = await faceapi.detectAllFaces(video, new faceapi.SsdMobilenetv1Options())
                     .withFaceLandmarks()
                     .withFaceDescriptors();
 
-                // Xóa canvas và vẽ lại
                 ctx.clearRect(0, 0, canvas.width, canvas.height);
 
-                // So khớp khuôn mặt phát hiện được với khuôn mặt sinh viên
                 detections.forEach(detection => {
                     const match = faceMatcher.findBestMatch(detection.descriptor);
 
-                    if (match.label !== 'unknown') {
+                    if (match.label !== 'unknown' && match.distance < 0.5) {
                         const ma_sv = parseInt(match.label);
 
-                        // Thêm vào danh sách sinh viên được nhận diện nếu chưa có
                         if (!recognizedStudents.has(ma_sv)) {
                             recognizedStudents.add(ma_sv);
-
-                            // Đánh dấu sinh viên có mặt trong CSDL
                             markStudentPresent(ma_sv);
-
-                            // Cập nhật giao diện
                             updateRecognizedCount();
                         }
+
+                        // Nếu sinh viên đã nhận diện trước đó, chỉ cập nhật nếu đã qua thời gian cooldown
+                        if (!lastRecognized[ma_sv] || (Date.now() - lastRecognized[ma_sv].time) > recognitionCooldown) {
+                            lastRecognized[ma_sv] = { time: Date.now(), name: "Đang tải..." };
+
+                            fetch(`get_student_name.php?ma_sv=${ma_sv}`)
+                                .then(response => response.json())
+                                .then(nameData => {
+                                    lastRecognized[ma_sv].name = nameData.ten_sv || "Không xác định";
+                                })
+                                .catch(error => console.error("Lỗi lấy tên sinh viên:", error));
+                        }
+
+                        const studentName = lastRecognized[ma_sv]?.name || "Đang tải...";
+
+                        // Vẽ hộp phát hiện
+                        const box = detection.detection.box;
+                        ctx.beginPath();
+                        ctx.lineWidth = 3;
+                        ctx.strokeStyle = 'green';
+                        ctx.rect(box.x, box.y, box.width, box.height);
+                        ctx.stroke();
+
+                        // Hiển thị tên trên hộp
+                        ctx.fillStyle = 'green';
+                        ctx.font = '18px Arial';
+                        ctx.fillText(`${studentName} (MSSV: ${ma_sv})`, box.x, box.y - 5);
                     }
-
-                    // Vẽ hộp phát hiện
-                    const box = detection.detection.box;
-                    ctx.beginPath();
-                    ctx.lineWidth = 3;
-                    ctx.strokeStyle = match.label !== 'unknown' ? 'green' : 'red';
-                    ctx.rect(box.x, box.y, box.width, box.height);
-                    ctx.stroke();
-
-                    // Vẽ nhãn
-                    ctx.fillStyle = match.label !== 'unknown' ? 'green' : 'red';
-                    ctx.font = '18px Arial';
-                    ctx.fillText(
-                        match.label !== 'unknown' ? `Đã nhận diện (${match.distance.toFixed(2)})` : 'Không nhận diện',
-                        box.x, box.y - 5
-                    );
                 });
             }, 100);
         }
+
+        let danhSachDiemDanh = [];
 
         // Đánh dấu sinh viên có mặt
         async function markStudentPresent(ma_sv) {
@@ -286,11 +295,17 @@ $stmt_lop->close();
                     const studentElement = document.createElement('div');
                     studentElement.className = 'student-recognized';
                     studentElement.innerHTML = `
-                        <strong>${nameData.ten_sv}</strong> (MSSV: ${ma_sv})
-                        <br>
-                        <small>Đã điểm danh lúc: ${new Date().toLocaleTimeString()}</small>
-                    `;
+                <strong>${nameData.ten_sv}</strong> (MSSV: ${ma_sv})
+                <br>
+                <small>Đã điểm danh lúc: ${new Date().toLocaleTimeString()}</small>`;
                     attendanceList.prepend(studentElement);
+
+                    // Thêm vào danh sách để gửi lên server khi hoàn thành
+                    danhSachDiemDanh.push({
+                        ma_sv: ma_sv,
+                        ten_sv: nameData.ten_sv,
+                        thoi_gian: new Date().toLocaleTimeString()
+                    });
                 }
             } catch (error) {
                 console.error('Lỗi khi điểm danh:', error);
@@ -303,7 +318,7 @@ $stmt_lop->close();
         }
 
         // Hoàn thành điểm danh
-        function completeAttendance() {
+        async function completeAttendance() {
             isRecognizing = false;
 
             if (stream) {
@@ -314,18 +329,45 @@ $stmt_lop->close();
             startBtn.textContent = 'Bắt Đầu Nhận Diện';
             completeBtn.disabled = true;
 
-            // Chuyển đến trang điểm danh thủ công để xác minh
-            window.location.href = `diemdanh.php?ma_lop=${ma_lop}&ma_monhoc=${ma_monhoc}&ngay=${ngay}`;
+            // Gửi danh sách sinh viên đã điểm danh lên server
+            fetch('diemdanh_submit.php', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify({
+                    ma_lop: ma_lop,
+                    ma_monhoc: ma_monhoc,
+                    ngay: ngay,
+                    danh_sach: danhSachDiemDanh
+                })
+            })
+                .then(response => response.json())
+                .then(data => {
+                    if (data.success) {
+                        alert("Điểm danh thành công!");
+                        window.location.href = `diemdanh.php?ma_lop=${ma_lop}&ma_monhoc=${ma_monhoc}&ngay=${ngay}`;
+                    } else {
+                        alert("Lỗi khi lưu điểm danh!");
+                    }
+                })
+                .catch(error => console.error('Lỗi:', error));
         }
 
+
         // Lắng nghe sự kiện
-        document.addEventListener('DOMContentLoaded', loadModels);
+        document.addEventListener('DOMContentLoaded', async () => {
+            await loadModels(); // Đợi tải mô hình xong
+            console.log("Mô hình đã sẵn sàng, có thể bắt đầu nhận diện.");
+        });
+
         startBtn.addEventListener('click', async () => {
             if (!stream) {
                 await startCamera();
             }
             startFaceRecognition();
         });
+
         completeBtn.addEventListener('click', completeAttendance);
     </script>
 </body>
