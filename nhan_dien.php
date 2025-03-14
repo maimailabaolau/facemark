@@ -271,46 +271,52 @@ $stmt_lop->close();
             }, 100);
         }
 
-        let danhSachDiemDanh = [];
+        let danhSachDiemDanh = {}; // Dùng object thay vì array
+
+        async function markStudentPresent(ma_sv) {
+            danhSachDiemDanh[ma_sv] = 1; // Đánh dấu trạng thái điểm danh
+            console.log(danhSachDiemDanh); // Kiểm tra danh sách
+        }
+
+
 
         // Đánh dấu sinh viên có mặt
-        async function markStudentPresent(ma_sv) {
-            try {
-                const response = await fetch('diemdanh_submit.php', {
-                    method: 'POST',
-                    headers: {
-                        'Content-Type': 'application/x-www-form-urlencoded'
-                    },
-                    body: `ma_sv=${ma_sv}&ma_lop=${ma_lop}&ma_monhoc=${ma_monhoc}&trang_thai=1`
-                });
+        // async function markStudentPresent(ma_sv) {
+        //     try {
+        //         const response = await fetch('diemdanh_submit.php', {
+        //             method: 'POST',
+        //             headers: {
+        //                 'Content-Type': 'application/x-www-form-urlencoded'
+        //             },
+        //             body: `ma_sv=${ma_sv}&ma_lop=${ma_lop}&ma_monhoc=${ma_monhoc}&trang_thai=1`
+        //         });
 
-                const data = await response.json();
+        //         const data = await response.json();
 
-                if (data.success) {
-                    // Lấy tên sinh viên
-                    const nameResponse = await fetch(`get_student_name.php?ma_sv=${ma_sv}`);
-                    const nameData = await nameResponse.json();
+        //         if (data.success) {
+        //             // Lấy tên sinh viên
+        //             const nameResponse = await fetch(`get_student_name.php?ma_sv=${ma_sv}`);
+        //             const nameData = await nameResponse.json();
 
-                    // Thêm vào danh sách điểm danh trong giao diện
-                    const studentElement = document.createElement('div');
-                    studentElement.className = 'student-recognized';
-                    studentElement.innerHTML = `
-                <strong>${nameData.ten_sv}</strong> (MSSV: ${ma_sv})
-                <br>
-                <small>Đã điểm danh lúc: ${new Date().toLocaleTimeString()}</small>`;
-                    attendanceList.prepend(studentElement);
+        //             // Thêm vào danh sách điểm danh trong giao diện
+        //             const studentElement = document.createElement('div');
+        //             studentElement.className = 'student-recognized';
+        //             studentElement.innerHTML = `
+        //         <strong>${nameData.ten_sv}</strong> (MSSV: ${ma_sv})
+        //         <br>
+        //         <small>Đã điểm danh lúc: ${new Date().toLocaleTimeString()}</small>`;
+        //             attendanceList.prepend(studentElement);
 
-                    // Thêm vào danh sách để gửi lên server khi hoàn thành
-                    danhSachDiemDanh.push({
-                        ma_sv: ma_sv,
-                        ten_sv: nameData.ten_sv,
-                        thoi_gian: new Date().toLocaleTimeString()
-                    });
-                }
-            } catch (error) {
-                console.error('Lỗi khi điểm danh:', error);
-            }
-        }
+        //             // Thêm vào danh sách để gửi lên server khi hoàn thành
+        //             danhSachDiemDanh.push({
+        //                 ma_sv: ma_sv,
+        //                 trang_thai: 1
+        //             });
+        //         }
+        //     } catch (error) {
+        //         console.error('Lỗi khi điểm danh:', error);
+        //     }
+        // }
 
         // Cập nhật số lượng sinh viên đã nhận diện
         function updateRecognizedCount() {

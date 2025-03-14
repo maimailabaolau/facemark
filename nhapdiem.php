@@ -129,47 +129,49 @@ $conn->close();
             </div>
         </div>
 
-        <div class="khung mt-4">
-            <h3 class="text-center">Bảng Nhập Điểm</h3>
-            <table class="table table-bordered">
-                <thead>
-                    <tr>
-                        <th>MSSV</th>
-                        <th>Họ Tên</th>
-                        <th>LT Hệ số 1</th>
-                        <th>Cuối kỳ 1</th>
-                        <th>Điểm tổng kết</th>
-                        <th>Thang điểm 4</th>
-                        <th>Điểm chữ</th>
-                        <th>Xếp loại</th>
-                    </tr>
-                </thead>
-                <tbody>
-                    <?php if (!empty($sinhvien_data)): ?>
-                        <?php foreach ($sinhvien_data as $row): ?>
-                            <tr oninput="tinhDiem(this)">
-                                <td><?= $row["ma_sv"] ?></td>
-                                <td><?= $row["ten_sv"] ?></td>
-                                <td><input type="number" class="form-control hs1" value="<?= $row["diem_giua_ky"] ?>"
-                                        step="0.1"></td>
-                                <td><input type="number" class="form-control ck1" value="<?= $row["diem_cuoi_ky"] ?>"
-                                        step="0.1"></td>
-
-                                <td><input type="text" class="form-control tongKet" readonly></td>
-                                <td><input type="text" class="form-control thangDiem4" readonly></td>
-                                <td class="diemChu">-</td>
-                                <td class="xepLoai">-</td>
-                            </tr>
-                        <?php endforeach; ?>
-                    <?php else: ?>
+        <div class="container">
+            <div class="khung">
+                <h3 class="text-center">Bảng Nhập Điểm</h3>
+                <table class="table-container table-bordered">
+                    <thead>
                         <tr>
-                            <td colspan="8" class="text-center">Không có dữ liệu</td>
+                            <th>MSSV</th>
+                            <th>Họ Tên</th>
+                            <th>LT Hệ số 1</th>
+                            <th>Cuối kỳ 1</th>
+                            <th>Điểm tổng kết</th>
+                            <th>Thang điểm 4</th>
+                            <th>Điểm chữ</th>
+                            <th>Xếp loại</th>
                         </tr>
-                    <?php endif; ?>
-                </tbody>
-            </table>
-            <button class="btn btn-primary mt-3" onclick="xacNhanDiem()">Xác nhận</button>
+                    </thead>
+                    <tbody>
+                        <?php if (!empty($sinhvien_data)): ?>
+                            <?php foreach ($sinhvien_data as $row): ?>
+                                <tr oninput="tinhDiem(this)">
+                                    <td><?= $row["ma_sv"] ?></td>
+                                    <td><?= $row["ten_sv"] ?></td>
+                                    <td><input type="number" class="form-control hs1" value="<?= $row["diem_giua_ky"] ?>"
+                                            step="0.1"></td>
+                                    <td><input type="number" class="form-control ck1" value="<?= $row["diem_cuoi_ky"] ?>"
+                                            step="0.1"></td>
 
+                                    <td><input type="text" class="form-control tongKet" readonly></td>
+                                    <td><input type="text" class="form-control thangDiem4" readonly></td>
+                                    <td class="diemChu">-</td>
+                                    <td class="xepLoai">-</td>
+                                </tr>
+                            <?php endforeach; ?>
+                        <?php else: ?>
+                            <tr>
+                                <td colspan="8" class="text-center">Không có dữ liệu</td>
+                            </tr>
+                        <?php endif; ?>
+                    </tbody>
+                </table>
+                <button class="btn" onclick="xacNhanDiem()">Xác nhận</button>
+
+            </div>
         </div>
     </div>
 </body>
