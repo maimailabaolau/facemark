@@ -91,6 +91,7 @@ $conn->close();
                 </ul>
             </div>
             <div class="button-container">
+                <a href="khuonmat.php" class="vertical-button">Khuôn mặt</a>
                 <button type="button" class="vertical-button" onclick="xacNhanDiemDanh()">Xác nhận</button>
                 <button type="button" class="vertical-button" id="open-recognition-btn">Bắt Đầu Nhận Diện</button>
 
